@@ -1,31 +1,23 @@
-﻿using OKAPI.InfraClasses;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using NLog;
+using OKAPI.InfraClasses;
 using RestSharp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace OKAPI.Handlers
 {
     /*
      * ImageRepositoryHandler. Named after the usage. If possible, the interface keeps the same even if the image repository and thus  
-     * the handler itself changes. 
-     * Default at this stage is the Kesko kuvakakku using Imgix https://docs.imgix.com/
+     * the handler itself changes.       
      */
     public interface IImageRepositoryHandler
     {
-        Task<string>? AddImage(string? finalName, string? originalUrl);
+        Task<string>? AddModelImage(string? finalImageFileName, string? originalUrl);
 
     }
     public class ImageRepositoryHandler : IImageRepositoryHandler
-    {
+    {        
         private static Logger? logger;
         private AppSettings AppSettings;
 
@@ -39,59 +31,72 @@ namespace OKAPI.Handlers
         }
 
 
-        public async Task<string?> AddImage(string? finalName, string? originalUrl)
+        public async Task<string?> AddModelImage(string? finalImageFileName, string? originalUrl)
         {
-            string? finalUrl = originalUrl;
-
-            /*
-            IEnumerable<JatkoLeasing_Vehicle> list = null;
+            string? finalUrl = null;
+            string modelimagepath = "modelimages/";
 
             try
-            {
-                //asetukset
-                
+            {                               
                 var cancellationTokenSource = new CancellationTokenSource();                
-                var client = new RestClient();                
+                var client = new RestClient();
 
-                var authRequest = new RestRequest(AppSettings.JatkoLeasing_apiAuthAddress, Method.POST);
-                authRequest.AddHeader("content-type", "application/x-www-form-urlencoded");
-                authRequest.AddParameter("grant_type", "password");
-                authRequest.AddParameter("userName", AppSettings.JatkoLeasing_apiUser);
-                authRequest.AddParameter("password", AppSettings.JatkoLeasing_apiPw);
-                
-                var authResponse = await client.ExecuteAsync(authRequest, cancellationTokenSource.Token);              
-                
-                if (authResponse.StatusCode == HttpStatusCode.OK)
+                string fileName = finalImageFileName.Substring(0, finalImageFileName.IndexOf("."));
+                string fileType = finalImageFileName.Substring(finalImageFileName.IndexOf(".")+1);
+
+                var address = AppSettings.Image_repository_url + modelimagepath + fileName;
+
+                //1. send first the metadata of the image
+                var request = new RestRequest(AppSettings.Image_repository_url, Method.Put);
+                request.AddHeader("x-token", AppSettings.Image_repository_secret);
+                request.AddJsonBody(new
                 {
-                    var jObject = JObject.Parse(authResponse.Content);
-                    string access_token = jObject.GetValue("access_token").ToString();
-                    string token_type = jObject.GetValue("token_type").ToString();
+                    contentType = "Image/" + fileType,
+                    originalFilename = finalImageFileName,
+                    meta = "{}"
+                });
 
-                    var request = new RestRequest(AppSettings.JatkoLeasing_apiReqAddress, Method.GET);
-                    request.AddHeader("authorization", token_type + " " + access_token);
-                    var response = await client.ExecuteAsync(request, cancellationTokenSource.Token);
+                var response = await client.ExecuteAsync(request, cancellationTokenSource.Token);
 
-                    if (response.StatusCode == HttpStatusCode.OK)
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var jObject = JObject.Parse(response.Content);
+                    var uploadUrl = jObject.GetValue("uploadUrl").ToString();
+
+                    //2. send the actual image
+                    if(uploadUrl != null)
                     {
-                        //if (logger != null) logger.Info("Sisältö:" + response.Content);
-                        list = JsonConvert.DeserializeObject<IEnumerable<JatkoLeasing_Vehicle>>(response.Content);
+                        var requestImage = new RestRequest(uploadUrl, Method.Put);
+                        requestImage.AddHeader("x-token", AppSettings.Image_repository_secret);
+                        requestImage.AddBody(File.ReadAllBytes(originalUrl));
+
+                        var responseImage = await client.ExecuteAsync(requestImage, cancellationTokenSource.Token); 
+                        if(responseImage.StatusCode == HttpStatusCode.OK)
+                        {
+                            finalUrl = AppSettings.Image_repository_public_url + modelimagepath + fileName;
+                        }
+                        else
+                        {
+                            if (logger != null) logger.Error("    API returned error with image request, status:" + responseImage.StatusCode + ", " + responseImage.StatusDescription);
+                        }
                     }
                     else
                     {
-                        if (logger != null) logger.Info("status:" + response.StatusCode + ", " + response.StatusDescription);
-                    }                    
+                        if (logger != null) logger.Error("    Couldn't get API image upload url");
+                    }
                 }
+                else
+                {
+                    if (logger != null) logger.Error("    API returned error with meta request, status:" + response.StatusCode + ", " + response.StatusDescription);
+                }                       
 
             }
             catch (Exception e)
             {
-                if (logger != null) logger.Error(e + ", autojen haku ei onnistunut.");
+                if (logger != null) logger.Error("    Error in model image adding: "+e.Message);
             }
-            */
-
+            
             return finalUrl;
         }
-
-
     }
 }

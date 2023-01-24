@@ -43,6 +43,7 @@ public class DatabaseHandler : IDatabaseHandler, IDisposable
                     modelCodeLong = g.modelCodeLong,
                     make = g.make
                 })
+                //Testing with Tarraco
                 .Where(m => m.modelCode.StartsWith("KN25"))                
                 .ToListAsync();
 

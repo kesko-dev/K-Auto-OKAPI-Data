@@ -7,6 +7,9 @@
         public string OKAPI_client_secret { get; set; }
         public string OKAPI_type_endpoint_url {get;set;}
         public string OKAPI_image_endpoint_url { get; set; }            
+        public string Image_repository_url { get; set; }    
+        public string Image_repository_public_url { get; set; }
+        public string Image_repository_secret { get; set; }
         public bool useLogging { get; set; }
         public string image_naming_conversion_Seat { get; set; }
         public string image_naming_conversion_Audi { get; set; }
