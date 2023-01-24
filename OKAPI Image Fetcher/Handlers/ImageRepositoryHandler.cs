@@ -49,12 +49,11 @@ namespace OKAPI.Handlers
                 //1. send first the metadata of the image
                 var request = new RestRequest(AppSettings.Image_repository_url, Method.Put);
                 request.AddHeader("x-token", AppSettings.Image_repository_secret);
-                request.AddJsonBody(new
-                {
-                    contentType = "Image/" + fileType,
-                    originalFilename = finalImageFileName,
-                    meta = "{}"
-                });
+                request.AddHeader("Content-type", "application/json");
+                
+                string requestBody = "{\"contentType\": \"Image/"+fileType+"\",\"originalFilename\": \"" + finalImageFileName + "\",\"meta\":{}}";
+                if (logger != null) logger.Info("      Trying to insert image meta data with: " + requestBody);
+                request.AddParameter("application/json", requestBody, ParameterType.RequestBody);
 
                 var response = await client.ExecuteAsync(request, cancellationTokenSource.Token);
 
