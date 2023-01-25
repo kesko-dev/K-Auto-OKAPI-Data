@@ -44,7 +44,7 @@ public class DatabaseHandler : IDatabaseHandler, IDisposable
                     make = g.make
                 })
                 //Testing with Tarraco
-                .Where(m => m.modelCode.StartsWith("KN25"))                
+                .Where(m => m.modelCode.StartsWith("KN25R"))                
                 .ToListAsync();
 
         }

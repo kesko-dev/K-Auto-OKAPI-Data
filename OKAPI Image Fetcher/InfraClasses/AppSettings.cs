@@ -11,9 +11,12 @@
         public string Image_repository_public_url { get; set; }
         public string Image_repository_secret { get; set; }
         public bool useLogging { get; set; }
-        public string image_naming_conversion_Seat { get; set; }
-        public string image_naming_conversion_Audi { get; set; }
-        public string image_naming_conversion_Volkswagen { get; set; }
+        public string Image_naming_conversion_Seat { get; set; }
+        public string Image_naming_conversion_Audi { get; set; }
+        public string Image_naming_conversion_Volkswagen { get; set; }
+        public string Image_filetype_Seat { get; set; }
+        public string Image_filetype_Audi { get; set; }
+        public string Image_filetype_Volkswagen { get; set; }
         public string AlertWebhookUrl { get; set; }
         public string AlertTitle { get; set; }
     }

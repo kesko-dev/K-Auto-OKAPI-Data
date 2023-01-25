@@ -82,21 +82,23 @@ namespace OKAPI.Services
                                             if (logger != null) logger.Info("    - Image final name: " + image.finalName);
 
                                             // add image file to image repository
-                                            image.finalUrl = await imageRepositoryHandler.AddModelImage(image.finalName, image.url) ?? string.Empty;
+                                            image.finalUrl = await imageRepositoryHandler.AddModelImage(image.finalName, brand.ResolveImageFiletype(model.make),image.url) ?? String.Empty;
                                             if (logger != null) logger.Info("    - Image final url: " + (image.finalUrl.Length > 0 ? image.finalUrl : "N/A"));
 
                                             // add image final url to database with model identifier
-                                            //if(image.finalUrl.Length > 0)
-                                            if (await databaseHandler.AddImageToModelDataAsync(model.modelCode, image.finalName, image.finalUrl))
+                                            if(image.finalUrl.Length > 0)
                                             {
-                                                if (logger != null) logger.Info("    - Image added to model data.");
-                                                thisImageCount++;
+                                                if (await databaseHandler.AddImageToModelDataAsync(model.modelCode, image.finalName, image.finalUrl))
+                                                {
+                                                    if (logger != null) logger.Info("    - Image added to model data.");
+                                                    thisImageCount++;
+                                                }
+                                                else
+                                                    if (logger != null) logger.Info("    - Image not added to model data.");
                                             }
-                                            else
-                                                if (logger != null) logger.Info("    - Image not added to model data.");
                                         }
                                         else
-                                            if (logger != null) logger.Info("NEW IMAGE NAME!!, not accepted, add to naming rules");
+                                            if (logger != null) logger.Info("NEW IMAGE NAME!!, not accepted, add to naming rules: "+image.name);
 
                                     }
                                     imgsTotalCount += thisImageCount;

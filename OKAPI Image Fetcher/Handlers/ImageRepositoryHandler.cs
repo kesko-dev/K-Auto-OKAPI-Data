@@ -1,9 +1,12 @@
 ﻿using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NLog;
 using OKAPI.InfraClasses;
 using RestSharp;
+using System;
 using System.Net;
+using System.Web;
 
 namespace OKAPI.Handlers
 {
@@ -13,7 +16,7 @@ namespace OKAPI.Handlers
      */
     public interface IImageRepositoryHandler
     {
-        Task<string>? AddModelImage(string? finalImageFileName, string? originalUrl);
+        Task<string>? AddModelImage(string? finalImageFileName, string imageFiletype, string? originalUrl);
 
     }
     public class ImageRepositoryHandler : IImageRepositoryHandler
@@ -31,7 +34,7 @@ namespace OKAPI.Handlers
         }
 
 
-        public async Task<string?> AddModelImage(string? finalImageFileName, string? originalUrl)
+        public async Task<string?> AddModelImage(string? finalImageFileName, string imageFiletype, string? originalUrl)
         {
             string? finalUrl = null;
             string modelimagepath = "modelimages/";
@@ -40,44 +43,53 @@ namespace OKAPI.Handlers
             {                               
                 var cancellationTokenSource = new CancellationTokenSource();                
                 var client = new RestClient();
-
-                string fileName = finalImageFileName.Substring(0, finalImageFileName.IndexOf("."));
-                string fileType = finalImageFileName.Substring(finalImageFileName.IndexOf(".")+1);
-
-                var address = AppSettings.Image_repository_url + modelimagepath + fileName;
+                                
+                var address = AppSettings.Image_repository_url + modelimagepath + finalImageFileName;
 
                 //1. send first the metadata of the image
-                var request = new RestRequest(AppSettings.Image_repository_url, Method.Put);
+                var request = new RestRequest(address, Method.Put);
                 request.AddHeader("x-token", AppSettings.Image_repository_secret);
-                request.AddHeader("Content-type", "application/json");
+                request.AddHeader("Content-Type", "application/json");
                 
-                string requestBody = "{\"contentType\": \"Image/"+fileType+"\",\"originalFilename\": \"" + finalImageFileName + "\",\"meta\":{}}";
+                string requestBody = "{\"contentType\": \"Image/"+imageFiletype+"\",\"originalFilename\": \"" + finalImageFileName+"."+imageFiletype + "\",\"meta\":{\"target\": \"www\"}}";
                 if (logger != null) logger.Info("      Trying to insert image meta data with: " + requestBody);
-                request.AddParameter("application/json", requestBody, ParameterType.RequestBody);
-
+                //request.AddParameter("application/json", requestBody, ParameterType.RequestBody);
+                request.AddJsonBody(requestBody);
                 var response = await client.ExecuteAsync(request, cancellationTokenSource.Token);
 
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var jObject = JObject.Parse(response.Content);
-                    var uploadUrl = jObject.GetValue("uploadUrl").ToString();
+                    string uploadUrl = jObject.GetValue("uploadUrl").ToString(); // HttpUtility.UrlDecode(jObject.GetValue("uploadUrl").ToString());
 
                     //2. send the actual image
                     if(uploadUrl != null)
                     {
                         var requestImage = new RestRequest(uploadUrl, Method.Put);
                         requestImage.AddHeader("x-token", AppSettings.Image_repository_secret);
-                        requestImage.AddBody(File.ReadAllBytes(originalUrl));
+                        requestImage.AddHeader("content-type", "Image/"+imageFiletype);
+                        requestImage.RequestFormat = DataFormat.Binary;
 
-                        var responseImage = await client.ExecuteAsync(requestImage, cancellationTokenSource.Token); 
-                        if(responseImage.StatusCode == HttpStatusCode.OK)
+                        using (WebClient imageclient = new WebClient())
                         {
-                            finalUrl = AppSettings.Image_repository_public_url + modelimagepath + fileName;
-                        }
-                        else
-                        {
-                            if (logger != null) logger.Error("    API returned error with image request, status:" + responseImage.StatusCode + ", " + responseImage.StatusDescription);
-                        }
+                            string path = "c:\\temp";
+                            string imageName = finalImageFileName + "." + imageFiletype;
+                            imageclient.DownloadFile(new Uri(originalUrl), path+"\\"+imageName);
+                            requestImage.AddFile(imageName,path+"\\"+imageName,"image/"+imageFiletype);
+
+                            var responseImage = await client.ExecuteAsync(requestImage, cancellationTokenSource.Token);
+                            if (responseImage.StatusCode == HttpStatusCode.OK)
+                            {
+                                finalUrl = AppSettings.Image_repository_public_url + modelimagepath + finalImageFileName;
+                            }
+                            else
+                            {
+                                if (logger != null) logger.Error("    API returned error with image request, status:" + responseImage.StatusCode + ", " + responseImage.StatusDescription);
+                            }
+
+                            File.Delete(path+"\\"+imageName); 
+                            imageclient.Dispose();
+                        }                                         
                     }
                     else
                     {
