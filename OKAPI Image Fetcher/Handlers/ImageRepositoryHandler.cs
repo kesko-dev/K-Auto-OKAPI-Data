@@ -65,33 +65,28 @@ namespace OKAPI.Handlers
                     //2. send the actual image
                     if(uploadUrl != null)
                     {
+                        //fetch the image from original url
+                        System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls13;
+                        HttpClient imageclient = new HttpClient();
+                        byte[] bytes = await imageclient.GetByteArrayAsync(new Uri(originalUrl));
+                        imageclient.Dispose();
+
+                        //set the request
                         var requestImage = new RestRequest(uploadUrl, Method.Put);
                         requestImage.AddHeader("x-token", AppSettings.Image_repository_secret);
-                        requestImage.AddHeader("content-type", "Image/"+imageFiletype);
+                        requestImage.AddHeader("content-type", "Image/" + imageFiletype);
                         requestImage.RequestFormat = DataFormat.Binary;
-                        //requestImage.AlwaysMultipartFormData = true;
+                        requestImage.AddParameter("Image/" + imageFiletype, bytes, ParameterType.RequestBody);
 
-                        using (WebClient imageclient = new WebClient())
+                        var responseImage = await client.PutAsync(requestImage, cancellationTokenSource.Token);
+                        if (responseImage.StatusCode == HttpStatusCode.OK)
                         {
-                            string path = "c:\\temp";
-                            string imageName = finalImageFileName + "." + imageFiletype;
-                            imageclient.DownloadFile(new Uri(originalUrl), path+"\\"+imageName);
-                            byte[] bytes = File.ReadAllBytes(path+"\\"+imageName);
-                            requestImage.AddParameter("Image/" + imageFiletype, bytes, ParameterType.RequestBody);
-
-                            var responseImage = await client.PutAsync(requestImage, cancellationTokenSource.Token);
-                            if (responseImage.StatusCode == HttpStatusCode.OK)
-                            {
-                                finalUrl = AppSettings.Image_repository_public_url + modelimagepath + finalImageFileName;
-                            }
-                            else
-                            {
-                                if (logger != null) logger.Error("    API returned error with image request, status:" + responseImage.StatusCode + ", " + responseImage.StatusDescription);
-                            }
-
-                            File.Delete(path+"\\"+imageName); 
-                            imageclient.Dispose();
-                        }                                         
+                            finalUrl = AppSettings.Image_repository_public_url + modelimagepath + finalImageFileName;
+                        }
+                        else
+                        {
+                            if (logger != null) logger.Error("    API returned error with image request, status:" + responseImage.StatusCode + ", " + responseImage.StatusDescription);
+                        }                            
                     }
                     else
                     {
