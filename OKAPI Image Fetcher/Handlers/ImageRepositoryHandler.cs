@@ -53,14 +53,14 @@ namespace OKAPI.Handlers
                 
                 string requestBody = "{\"contentType\": \"Image/"+imageFiletype+"\",\"originalFilename\": \"" + finalImageFileName+"."+imageFiletype + "\",\"meta\":{\"target\": \"www\"}}";
                 if (logger != null) logger.Info("      Trying to insert image meta data with: " + requestBody);
-                //request.AddParameter("application/json", requestBody, ParameterType.RequestBody);
                 request.AddJsonBody(requestBody);
-                var response = await client.ExecuteAsync(request, cancellationTokenSource.Token);
+                var response = await client.PutAsync(request, cancellationTokenSource.Token);
 
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var jObject = JObject.Parse(response.Content);
-                    string uploadUrl = jObject.GetValue("uploadUrl").ToString(); // HttpUtility.UrlDecode(jObject.GetValue("uploadUrl").ToString());
+                    string uploadUrl = jObject.GetValue("uploadUrl").ToString(); 
+                    if(logger != null) logger.Info("    Trying to insert file with the uploadUrl: "+uploadUrl);
 
                     //2. send the actual image
                     if(uploadUrl != null)
@@ -69,15 +69,17 @@ namespace OKAPI.Handlers
                         requestImage.AddHeader("x-token", AppSettings.Image_repository_secret);
                         requestImage.AddHeader("content-type", "Image/"+imageFiletype);
                         requestImage.RequestFormat = DataFormat.Binary;
+                        //requestImage.AlwaysMultipartFormData = true;
 
                         using (WebClient imageclient = new WebClient())
                         {
                             string path = "c:\\temp";
                             string imageName = finalImageFileName + "." + imageFiletype;
                             imageclient.DownloadFile(new Uri(originalUrl), path+"\\"+imageName);
-                            requestImage.AddFile(imageName,path+"\\"+imageName,"image/"+imageFiletype);
+                            byte[] bytes = File.ReadAllBytes(path+"\\"+imageName);
+                            requestImage.AddParameter("Image/" + imageFiletype, bytes, ParameterType.RequestBody);
 
-                            var responseImage = await client.ExecuteAsync(requestImage, cancellationTokenSource.Token);
+                            var responseImage = await client.PutAsync(requestImage, cancellationTokenSource.Token);
                             if (responseImage.StatusCode == HttpStatusCode.OK)
                             {
                                 finalUrl = AppSettings.Image_repository_public_url + modelimagepath + finalImageFileName;
