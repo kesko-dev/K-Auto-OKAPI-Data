@@ -169,9 +169,12 @@ namespace OKAPI.Handlers
                     {
                         try
                         {
-                            var request = new RestRequest(AppSettings.OKAPI_image_endpoint_url, Method.Post);
+                            string format = brand.ResolveImageFiletype(brandCode);
+                            string apiUrl = AppSettings.OKAPI_image_endpoint_url + (format != null ? "?format="+format : "" ) + (AppSettings.Use_Image_Width != null ? "?wid=" + AppSettings.Use_Image_Width : "");
+                            var request = new RestRequest(apiUrl, Method.Post);
                             request.AddHeader("authorization", token_type + " " + access_token);
                             request.AddHeader("Accept", "*/*");
+                            request.AddHeader("OKAPI-PROCESSING-TYPE", "BATCH");
                             request.AddHeader("Content-Type", "application/json");
 
                             string requestBody = "{\"brand_code\": \"" + brand.GetOKAPIBrandCode(brandCode) + "\",\"model_code\": \"" + OKAPIModelCode + "\",\"options\":[{\"category\": \"TYPE\",\"code\": \"TYPE:" + modelCodeLong + "\"}]}";

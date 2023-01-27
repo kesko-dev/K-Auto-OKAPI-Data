@@ -79,17 +79,10 @@ namespace OKAPI.Services
                                         // -> if we further recognize that different models provide different naming then we should alter the brand naming logic to also allow not identified names and provide them just index above the identified image names.
                                         if (image.finalName != null && image.url != null)
                                         {
-                                            if (logger != null) logger.Info("    - Image final name: " + image.finalName);
-
-                                            //set original image width if set by parameter
-                                            string imageUrl = image.url;
-                                            if(AppSettings.Use_Image_Width != null)
-                                            {
-                                                imageUrl = imageUrl.Substring(0,imageUrl.IndexOf("?")) + "?wid="+AppSettings.Use_Image_Width;
-                                            }
+                                            if (logger != null) logger.Info("    - Image final name: " + image.finalName);                                                                                      
 
                                             // add image file to image repository
-                                            image.finalUrl = await imageRepositoryHandler.AddModelImage(image.finalName, brand.ResolveImageFiletype(model.make), imageUrl) ?? String.Empty;
+                                            image.finalUrl = await imageRepositoryHandler.AddModelImage(image.finalName, brand.ResolveImageFiletype(model.make), image.url) ?? String.Empty;
                                             if (logger != null) logger.Info("    - Image final url: " + (image.finalUrl.Length > 0 ? image.finalUrl : "N/A"));
 
                                             // add image final url to database with model identifier
