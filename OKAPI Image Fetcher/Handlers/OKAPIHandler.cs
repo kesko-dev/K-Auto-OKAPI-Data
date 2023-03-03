@@ -11,7 +11,7 @@ namespace OKAPI.Handlers
 {
     public interface IOKAPIHandler
     {
-        Task<OKAPIImageResponse?> GetModelImages(string? brandCode, string? modelCodeLong);
+        Task<OKAPIImageResponse?> GetModelImages(ModelsData model);
     }
     public class OKAPIHandler : IOKAPIHandler
     {
@@ -145,7 +145,7 @@ namespace OKAPI.Handlers
             return OKAPIModelCode;
         }
 
-        public async Task<OKAPIImageResponse?> GetModelImages(string? brandCode, string? modelCodeLong)
+        public async Task<OKAPIImageResponse?> GetModelImages(ModelsData model)
         {
             OKAPIImageResponse? images = null;
 
@@ -155,7 +155,7 @@ namespace OKAPI.Handlers
                 if(access_token == null)
                     await FetchToken(false);
 
-                string OKAPIModelCode = await GetOKAPIModelCode(modelCodeLong);
+                string OKAPIModelCode = await GetOKAPIModelCode(model.ModelCodeLong);
                 bool success = false;
                 bool refreshedToken = false;
                 bool apierror = false;
@@ -169,7 +169,7 @@ namespace OKAPI.Handlers
                     {
                         try
                         {
-                            string format = brand.ResolveImageFiletype(brandCode);
+                            string format = brand.ResolveImageFiletype(model.Make);
                             string apiUrl = AppSettings.OKAPI_image_endpoint_url + (format != null ? "?format="+format : "" ) + (AppSettings.Use_Image_Width != null ? "?wid=" + AppSettings.Use_Image_Width : "");
                             var request = new RestRequest(apiUrl, Method.Post);
                             request.AddHeader("authorization", token_type + " " + access_token);
@@ -177,7 +177,29 @@ namespace OKAPI.Handlers
                             request.AddHeader("OKAPI-PROCESSING-TYPE", "BATCH");
                             request.AddHeader("Content-Type", "application/json");
 
-                            string requestBody = "{\"brand_code\": \"" + brand.GetOKAPIBrandCode(brandCode) + "\",\"model_code\": \"" + OKAPIModelCode + "\",\"options\":[{\"category\": \"TYPE\",\"code\": \"TYPE:" + modelCodeLong + "\"}]}";
+                            string individualAdder = "";
+                            if(model.ExistenceType == (int)EXISTENCETYPES.IndividualNew)
+                            {
+                                if(model.AdditionalAccessories != null)
+                                {
+                                    foreach (AdditionalAccessory accessory in model.AdditionalAccessories)
+                                    {
+                                        if(accessory != null && accessory.Description != null && accessory.Description.Length>0)
+                                            individualAdder += ",{\"category\": \"PACKET\",\"code\": \"PACKET:" + accessory.PrNumber + "\"}";
+                                    }
+                                }
+                                if (model.ColorCode != null)
+                                {
+                                    individualAdder += ",{\"category\": \"COLOR_EXTERIEUR\",\"code\": \"COLOR_EXTERIEUR:" + model.ColorCode + "\"}";
+                                }
+                                if (model.ColorCodeInterior != null)
+                                {
+                                    individualAdder += ",{\"category\": \"COLOR_INTERIEUR\",\"code\": \"COLOR_INTERIEUR:" + model.ColorCodeInterior + "\"}";
+                                }
+
+                            }
+
+                            string requestBody = "{\"brand_code\": \"" + brand.GetOKAPIBrandCode(model.Make) + "\",\"model_code\": \"" + OKAPIModelCode + "\",\"options\":[{\"category\": \"TYPE\",\"code\": \"TYPE:" + model.ModelCodeLong + "\"}" + individualAdder + "]}";
                             if (logger != null) logger.Info("      Trying to fetch images with request body: " + requestBody);
                             request.AddParameter("application/json",requestBody,ParameterType.RequestBody);                                                                                
 

@@ -36,15 +36,10 @@ public class DatabaseHandler : IDatabaseHandler, IDisposable
 
         try
         {
-            models = await db.ModelsTable                
-                .Select(g => new ModelsData
-                {
-                    modelCode = g.modelCode,
-                    modelCodeLong = g.modelCodeLong,
-                    make = g.make
-                })
+            models = await db.ModelsTable
+                .Include(a => a.AdditionalAccessories)                          
                 //Testing with Tarraco
-                .Where(m => m.modelCode.StartsWith("KN25R"))                
+                .Where(m => m.ModelCodeLong.StartsWith("KN28BR"))                
                 .ToListAsync();
 
         }

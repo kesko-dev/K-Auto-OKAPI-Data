@@ -98,6 +98,8 @@ namespace OKAPI.InfraClasses
                 dic.TryGetValue(originalName, out converted);
                 if(converted != null)
                     finalName = "img_" + modelCode.Replace(" ", "_") + "_" + converted;
+                else
+                    finalName = "img_" + modelCode.Replace(" ", "_") + "_zzz_" + originalName;
                
             }
 

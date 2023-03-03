@@ -7,14 +7,38 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OKAPI.Models
 {
+    public enum EXISTENCETYPES
+    {
+        FactoryOrder = 1,
+        IndividualNew = 2,
+        IndividualUsed = 3
+    }
+
     [Table("ModelPriceForOnline", Schema = "Price")]
     public class ModelsData
     {
         [Key]
-        public string? modelCode { get; set; }
-        public string? modelCodeLong { get; set; }   
-        public string? make { get; set; }
+        public string? ComissionNumber { get; set; } //modelcode for existencetype=1 (factory order) / comissionumber for existencetype=2 (individual)
+        public int? ExistenceType { get; set; }
+        public string? ModelCodeLong { get; set; }   
+        public string? Make { get; set; }
+        public string? ColorCode { get; set; }
+        public string? ColorCodeInterior { get; set; }
+        public virtual ICollection<AdditionalAccessory>? AdditionalAccessories { get; set; }
 
+    }
+
+    [Table("ModelPriceForOnlineAccessories", Schema = "Price")]
+    public class AdditionalAccessory
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]        
+        public Guid guid { get; set; }        
+        [ForeignKey("ModelNP")]
+        public string? ComissionNumber { get; set; }
+        public string? PrNumber { get; set; }       
+        public string? Description { get; set; }    
+        public virtual ModelsData? ModelNP { get; set; }
     }
 
     public class OKAPIImage
@@ -45,19 +69,7 @@ namespace OKAPI.Models
         public string? imageUrl { get; set; }
     }
     
-    /*
-    [Table("Accessories", Schema = "TiNet")]
-    public class TiNetData_Accessory
-    {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid guid { get; set; }
-        [ForeignKey("ModelNP")]
-        public string modelCode { get; set; }
-        public string name { get; set; }
-        public virtual TiNetData_Model ModelNP { get; set; }
-    }
-    */
+    
     
     public class ModelDataDbContext : DbContext
     {
@@ -68,8 +80,15 @@ namespace OKAPI.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<AdditionalAccessory>()
+            .HasOne(p => p.ModelNP)
+            .WithMany(b => b.AdditionalAccessories)
+            .HasForeignKey(p => p.ComissionNumber)
+            .HasPrincipalKey(b => b.ComissionNumber);
         }
         public DbSet<ModelsData> ModelsTable { get; set; }
+        public DbSet<AdditionalAccessory> AdditionalAccessories { get; set; }
         public DbSet<ModelImage> ModelsImageTable { get; set; }
  
     }
