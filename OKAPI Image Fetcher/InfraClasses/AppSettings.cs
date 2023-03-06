@@ -12,8 +12,11 @@
         public string Image_repository_secret { get; set; }
         public bool useLogging { get; set; }
         public string Image_naming_conversion_Seat { get; set; }
+        public string Prevent_images_Seat { get; set; } 
         public string Image_naming_conversion_Audi { get; set; }
+        public string Prevent_images_Audi { get; set; }
         public string Image_naming_conversion_Volkswagen { get; set; }
+        public string Prevent_images_Volkswagen { get; set; }
         public string Image_filetype_Seat { get; set; }
         public string Image_filetype_Audi { get; set; }
         public string Image_filetype_Volkswagen { get; set; }

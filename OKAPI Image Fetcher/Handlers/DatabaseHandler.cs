@@ -39,7 +39,7 @@ public class DatabaseHandler : IDatabaseHandler, IDisposable
             models = await db.ModelsTable
                 .Include(a => a.AdditionalAccessories)                          
                 //Testing with Tarraco
-                .Where(m => m.ModelCodeLong.StartsWith("KN28BR"))                
+                .Where(m => m.ActiveInSpider == 1 && "seat, audi, cupra".Contains(m.Make.ToLower()) )                
                 .ToListAsync();
 
         }

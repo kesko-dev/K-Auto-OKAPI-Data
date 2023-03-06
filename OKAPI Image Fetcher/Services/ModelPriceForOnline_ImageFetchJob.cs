@@ -38,7 +38,9 @@ namespace OKAPI.Services
             bool success = true;
             int imgsTotalCount = 0;
             int modelsCount = 0;
+            int modelsHandledCount = 0;
             int modelFailures = 0;
+            int possibleModelFailures = 0;
             if (logger != null) logger.Info("Starting job for getting OKAPI images.");
             
             try
@@ -80,14 +82,14 @@ namespace OKAPI.Services
                                         // -> if we further recognize that different models provide different naming then we should alter the brand naming logic to also allow not identified names and provide them just index above the identified image names.
                                         if (image.finalName != null && image.url != null)
                                         {
-                                            if (logger != null) logger.Info("    - Image final name: " + image.finalName);                                                                                      
+                                            if (logger != null) logger.Info("    - Image final name: " + image.finalName);
 
                                             // add image file to image repository
                                             image.finalUrl = await imageRepositoryHandler.AddModelImage(image.finalName, brand.ResolveImageFiletype(model.Make), image.url) ?? String.Empty;
                                             if (logger != null) logger.Info("    - Image final url: " + (image.finalUrl.Length > 0 ? image.finalUrl : "N/A"));
 
                                             // add image final url to database with model identifier
-                                            if(image.finalUrl.Length > 0)
+                                            if (image.finalUrl.Length > 0)
                                             {
                                                 if (await databaseHandler.AddImageToModelDataAsync(model.ComissionNumber, image.finalName, image.finalUrl))
                                                 {
@@ -99,14 +101,19 @@ namespace OKAPI.Services
                                             }
                                         }
                                         else
-                                            if (logger != null) logger.Info("NEW IMAGE NAME!!, not accepted, add to naming rules: "+image.name);
+                                            if (logger != null) logger.Info("NEW IMAGE NAME!!, not accepted, add to naming rules: " + image.name);
 
                                     }
                                     imgsTotalCount += thisImageCount;
                                     if (logger != null) logger.Info("  - Added " + thisImageCount + "images.");
                                 }
                                 else
+                                {
                                     if (logger != null) logger.Info("  - No images added.");
+                                    possibleModelFailures++;
+                                }
+                                
+                                modelsHandledCount++;
                             }
                         }
                         catch(Exception e)
@@ -125,6 +132,10 @@ namespace OKAPI.Services
                 if(logger != null ) logger.Error(e, "Error while handling Image Fetch job: "+e.StackTrace+ ", "+e.InnerException);
                 success = false;
             }
+
+            //logging stats
+            if (logger != null) logger.Info("Handled models: " + modelsHandledCount + " / " + modelsCount + ", possible OKAPI failures:" + possibleModelFailures + ", model handling errors: " + modelFailures);
+
             //if several modelfailures
             if(modelFailures > 3)
                 success = false;

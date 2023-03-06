@@ -24,6 +24,7 @@ namespace OKAPI.Models
         public string? Make { get; set; }
         public string? ColorCode { get; set; }
         public string? ColorCodeInterior { get; set; }
+        public int? ActiveInSpider { get; set; }
         public virtual ICollection<AdditionalAccessory>? AdditionalAccessories { get; set; }
 
     }

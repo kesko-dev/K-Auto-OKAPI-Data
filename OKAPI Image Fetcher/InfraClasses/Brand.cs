@@ -71,18 +71,22 @@ namespace OKAPI.InfraClasses
             string? finalName = null;
 
             string? conversionList = null;
+            string? preventImageList = null;
             if (brandName != null)
             {
                 switch (brandName.ToLower())
                 {
                     case "audi":
                         conversionList = AppSettings.Image_naming_conversion_Audi;
+                        preventImageList = AppSettings.Prevent_images_Audi;
                         break;
                     case "seat":
                         conversionList = AppSettings.Image_naming_conversion_Seat;
+                        preventImageList = AppSettings.Prevent_images_Seat;
                         break;
                     case "volkswagen":
                         conversionList = AppSettings.Image_naming_conversion_Volkswagen;
+                        preventImageList = AppSettings.Prevent_images_Volkswagen;
                         break;
                 }
             }
@@ -99,7 +103,8 @@ namespace OKAPI.InfraClasses
                 if(converted != null)
                     finalName = "img_" + modelCode.Replace(" ", "_") + "_" + converted;
                 else
-                    finalName = "img_" + modelCode.Replace(" ", "_") + "_zzz_" + originalName;
+                    if(preventImageList == null || (preventImageList != null && !preventImageList.Contains(originalName)))
+                        finalName = "img_" + modelCode.Replace(" ", "_") + "_zzz_" + originalName;
                
             }
 
