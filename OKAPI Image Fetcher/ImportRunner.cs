@@ -22,7 +22,7 @@ namespace OKAPI.Services
        
         public async Task Start()
         {
-            if (logger != null) logger.Info($"Start leasing importrunner. Job count {_jobs.Count()}");
+            if (logger != null) logger.Info($"Start OKAPI importrunner. Job count {_jobs.Count()}");
 
             foreach (var job in _jobs)
             {

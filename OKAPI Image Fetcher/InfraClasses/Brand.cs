@@ -31,6 +31,7 @@ namespace OKAPI.InfraClasses
                         OKAPIBrandCode = "AU";
                         break;
                     case "seat":
+                    case "cupra":
                         OKAPIBrandCode = "SE";
                         break;
                     case "volkswagen":
@@ -55,6 +56,7 @@ namespace OKAPI.InfraClasses
                         filetype = AppSettings.Image_filetype_Audi;
                         break;
                     case "seat":
+                    case "cupra":
                         filetype = AppSettings.Image_filetype_Seat;
                         break;
                     case "volkswagen":
@@ -81,6 +83,7 @@ namespace OKAPI.InfraClasses
                         preventImageList = AppSettings.Prevent_images_Audi;
                         break;
                     case "seat":
+                    case "cupra":
                         conversionList = AppSettings.Image_naming_conversion_Seat;
                         preventImageList = AppSettings.Prevent_images_Seat;
                         break;
